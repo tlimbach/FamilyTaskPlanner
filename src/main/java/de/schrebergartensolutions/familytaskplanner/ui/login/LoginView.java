@@ -6,6 +6,7 @@ import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import de.schrebergartensolutions.familytaskplanner.SessionUtils;
 
 @PageTitle("Login | Familientaskplaner")
 @Route("login")
@@ -21,7 +22,7 @@ public class LoginView extends VerticalLayout {
         login.setForgotPasswordButtonVisible(false);
         login.addLoginListener(e -> {
             String username = e.getUsername();
-            UI.getCurrent().getSession().setAttribute("user", username);
+            SessionUtils.set(SessionUtils.Type.user, username);
             UI.getCurrent().navigate("planner");
         });
 
