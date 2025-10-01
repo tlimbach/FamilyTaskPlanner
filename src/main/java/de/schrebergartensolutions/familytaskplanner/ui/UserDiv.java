@@ -32,7 +32,6 @@ public class UserDiv extends Div {
 
     public UserDiv() {
         setSizeFull();
-
         users.add(new Benutzer("papa", "#1976d2"));
 
         grid.addColumn(Benutzer::getName).setHeader("Name").setAutoWidth(true).setFlexGrow(1);
@@ -46,13 +45,13 @@ public class UserDiv extends Div {
                   .set("border-radius", "4px")
                   .set("background", c);
             swatch.getElement().setProperty("title", c);
-            System.out.println("color for user "+ user.getName() + " is " + user.getFarbe());
             return swatch;
         }))
         .setHeader("Farbe")
         .setAutoWidth(true)
         .setTextAlign(ColumnTextAlign.CENTER)
         .setFlexGrow(0);
+
         grid.setDataProvider(dataProvider);
         grid.setSelectionMode(Grid.SelectionMode.SINGLE);
         grid.setSizeFull();
@@ -118,7 +117,8 @@ public class UserDiv extends Div {
                 existing.setName(name);
                 existing.setFarbe(color);
                 dataProvider.refreshItem(existing);
-                grid.getDataProvider().refreshItem(existing);
+//                grid.getDataProvider().refreshItem(existing);
+//                dataProvider.refreshAll();
             }
             dlg.close();
         });
