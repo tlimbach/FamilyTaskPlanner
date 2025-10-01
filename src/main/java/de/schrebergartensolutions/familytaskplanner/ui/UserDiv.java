@@ -89,13 +89,14 @@ public class UserDiv extends Div {
         dlg.setDraggable(true);
         dlg.setResizable(false);
 
-        TextField tfName = new TextField("Benutzername");
+        TextField tfName = new TextField();
+        tfName.setPlaceholder("Benutzername");
         tfName.setWidthFull();
         Input colorInput = new Input();
         colorInput.setType("color");
         colorInput.getStyle()
             .set("height", "var(--lumo-size-m)")
-            .set("width",  "var(--lumo-size-m)")
+            .set("width",  "100%")
             .set("padding", "0")
             .set("border", "1px solid var(--lumo-contrast-20pct)")
             .set("border-radius", "var(--lumo-border-radius-m)");
@@ -132,27 +133,23 @@ public class UserDiv extends Div {
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
 
-        FormLayout form = new FormLayout();
-        form.setWidthFull();
-        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2)); // 2 Spalten
+        FormLayout formLayout = new FormLayout();
+        formLayout.setWidthFull();
+        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1)); // 2 Spalten
 
         Span lblName = new Span("Benutzername");
         Span lblColor = new Span("Farbe");
 
-        // Felder auf volle Breite der rechten Spalte setzen
         tfName.setWidthFull();
-
-        // Reihenfolge: Label links, Feld rechts (Zeile 1)
-        form.add(lblName, tfName);
-        // Zeile 2: Label links, Color rechts
-        form.add(lblColor, colorInput);
+        formLayout.addFormItem(tfName, lblName);
+        formLayout.addFormItem(colorInput, lblColor);
 
         // Buttons unten rechts
         HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
         buttons.setWidthFull();
         buttons.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
-        VerticalLayout content = new VerticalLayout(form, buttons);
+        VerticalLayout content = new VerticalLayout(formLayout, buttons);
         content.setPadding(true);
         content.setSpacing(true);
         content.setWidth("480px");
@@ -162,6 +159,8 @@ public class UserDiv extends Div {
         } else {
             dlg.setHeaderTitle("Benutzer bearbeiten");
         }
+        // Header zentrieren (einfach & robust)
+        dlg.getHeader().getElement().getStyle().set("width", "100%").set("text-align", "center");
 
         dlg.add(content);
         dlg.open();
