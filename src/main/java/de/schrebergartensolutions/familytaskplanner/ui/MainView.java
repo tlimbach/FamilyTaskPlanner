@@ -64,9 +64,7 @@ public class MainView extends VerticalLayout {
         tasksContent.setText("→ Hier kommt später die Task-Übersicht hin");
         tasksContent.setSizeFull();
 
-        Div usersContent = new Div();
-        usersContent.setText("→ Hier kommt später die Benutzer-Verwaltung hin");
-        usersContent.setSizeFull();
+        UserDiv userDiv = new UserDiv();
 
         Div content = new Div(tasksContent);
         content.setSizeFull();
@@ -76,7 +74,7 @@ public class MainView extends VerticalLayout {
             if (event.getSelectedTab() == tasksTab) {
                 content.add(tasksContent);
             } else if (event.getSelectedTab() == usersTab) {
-                content.add(usersContent);
+                content.add(userDiv);
             }
         });
 
