@@ -2,10 +2,10 @@ package de.schrebergartensolutions.familytaskplanner.ui;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -14,7 +14,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
-import org.vaadin.addons.tatu.ColorPicker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ public class UserDiv extends Div {
     private final List<Benutzer> users = new ArrayList<>();
     private final ListDataProvider<Benutzer> dataProvider = new ListDataProvider<>(users);
 
-    private final Button btnNew = new Button("Neu");
     private final Button btnEdit = new Button("Bearbeiten");
     private final Button btnDelete = new Button("Löschen");
 
@@ -59,6 +57,7 @@ public class UserDiv extends Div {
         btnEdit.setEnabled(false);
         btnDelete.setEnabled(false);
 
+        Button btnNew = new Button("Neu");
         btnNew.addClickListener(e -> openUserDialog(null));
         btnEdit.addClickListener(e -> grid.getSelectedItems().stream().findFirst().ifPresent(this::openUserDialog));
         btnDelete.addClickListener(e -> grid.getSelectedItems().stream().findFirst().ifPresent(this::deleteUser));
@@ -68,6 +67,9 @@ public class UserDiv extends Div {
             btnEdit.setEnabled(hasSel);
             btnDelete.setEnabled(hasSel);
         });
+
+
+        grid.addItemDoubleClickListener(e -> openUserDialog(e.getItem()));
 
         VerticalLayout right = new VerticalLayout(new H3("Aktionen"), btnNew, btnEdit, btnDelete);
         right.setPadding(true);
@@ -89,23 +91,31 @@ public class UserDiv extends Div {
 
         TextField tfName = new TextField("Benutzername");
         tfName.setWidthFull();
-        ColorPicker colorPicker = new ColorPicker();
-        colorPicker.setInputMode(ColorPicker.InputMode.NOCSSINPUT);
-        colorPicker.setWidthFull();
+        Input colorInput = new Input();
+        colorInput.setType("color");
+        colorInput.getStyle()
+            .set("height", "var(--lumo-size-m)")
+            .set("width",  "var(--lumo-size-m)")
+            .set("padding", "0")
+            .set("border", "1px solid var(--lumo-contrast-20pct)")
+            .set("border-radius", "var(--lumo-border-radius-m)");
 
         if (existing != null) {
             tfName.setValue(Objects.toString(existing.getName(), ""));
-            colorPicker.setValue(Objects.toString(existing.getFarbe(), "#1976d2"));
+            String initial = existing.getFarbe() != null && !existing.getFarbe().isBlank() ? existing.getFarbe() : "#1976d2";
+            colorInput.setValue(initial);
+        } else {
+            colorInput.setValue("#1976d2");
         }
 
         Button ok = new Button("OK", e -> {
             String name = tfName.getValue() == null ? "" : tfName.getValue().trim();
-            String color = Objects.toString(colorPicker.getValue(), "").trim();
+            String color = colorInput.getValue();
             if (name.isBlank() || color.isBlank()) {
                 Notification.show("Bitte Name und Farbe angeben.");
                 return;
             }
-            // einfache Normalisierung: sicherstellen, dass mit '#'
+
             if (!color.startsWith("#")) {
                 color = "#" + color;
             }
@@ -117,18 +127,32 @@ public class UserDiv extends Div {
                 existing.setName(name);
                 existing.setFarbe(color);
                 dataProvider.refreshItem(existing);
-//                grid.getDataProvider().refreshItem(existing);
-//                dataProvider.refreshAll();
             }
             dlg.close();
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
 
-        HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
-        buttons.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-        buttons.setWidthFull();
+        FormLayout form = new FormLayout();
+        form.setWidthFull();
+        form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 2)); // 2 Spalten
 
-        VerticalLayout content = new VerticalLayout(tfName, colorPicker, buttons);
+        Span lblName = new Span("Benutzername");
+        Span lblColor = new Span("Farbe");
+
+        // Felder auf volle Breite der rechten Spalte setzen
+        tfName.setWidthFull();
+
+        // Reihenfolge: Label links, Feld rechts (Zeile 1)
+        form.add(lblName, tfName);
+        // Zeile 2: Label links, Color rechts
+        form.add(lblColor, colorInput);
+
+        // Buttons unten rechts
+        HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
+        buttons.setWidthFull();
+        buttons.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
+
+        VerticalLayout content = new VerticalLayout(form, buttons);
         content.setPadding(true);
         content.setSpacing(true);
         content.setWidth("480px");
