@@ -37,7 +37,7 @@ public class UserDiv extends Div {
             Div swatch = new Div();
             String c = user.getFarbe() == null || user.getFarbe().isBlank() ? "#ffffff" : user.getFarbe();
             swatch.getStyle()
-                  .set("width", "1.5rem")
+                  .set("width", "2.5rem")
                   .set("height", "1.5rem")
                   .set("border", "1px solid #ccc")
                   .set("border-radius", "4px")

@@ -1,0 +1,38 @@
+package de.schrebergartensolutions.familytaskplanner.service;
+
+import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
+import de.schrebergartensolutions.familytaskplanner.repositories.BenutzerRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class BenutzerService {
+    private final BenutzerRepository repo;
+
+    public Page<Benutzer> page(Pageable pageable) {
+        return repo.findAll(pageable);
+    }
+
+    @Transactional
+    public Benutzer create(String name, String farbe) {
+        if (repo.existsByName(name)) throw new IllegalArgumentException("Name existiert bereits");
+        return repo.save(new Benutzer(name, farbe));
+    }
+
+    @Transactional
+    public Benutzer update(Long id, String name, String farbe) {
+        var b = repo.findById(id).orElseThrow();
+        b.setName(name);
+        b.setFarbe(farbe);
+        return b; // Dirty checking speichert automatisch
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        repo.deleteById(id);
+    }
+}

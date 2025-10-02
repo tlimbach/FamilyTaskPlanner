@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: family-pg
+    environment:
+      POSTGRES_DB: familydb
+      POSTGRES_USER: family
+      POSTGRES_PASSWORD: familypw
+    ports:
+      - "5432:5432"
+    volumes:
+      - family_pg_data:/var/lib/postgresql/data
+volumes:
+  family_pg_data:
