@@ -19,10 +19,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Route("planner")
 public class MainView extends VerticalLayout {
 
-    @Autowired
-    private UserDiv userDiv;
 
-    public MainView() {
+    private final UserDiv userDiv;
+
+
+    private final TasksDiv tasksDiv;
+
+    @Autowired
+    public MainView(UserDiv userDiv, TasksDiv tasksDiv) {
+        this.userDiv = userDiv;
+        this.tasksDiv = tasksDiv;
+
         setSizeFull();
         setPadding(false);
         setSpacing(false);
@@ -63,18 +70,13 @@ public class MainView extends VerticalLayout {
         Tabs tabs = new Tabs(tasksTab, usersTab);
         tabs.setWidthFull();
 
-
-        Div tasksContent = new Div();
-        tasksContent.setText("→ Hier kommt später die Task-Übersicht hin");
-        tasksContent.setSizeFull();
-
-        Div content = new Div(tasksContent);
+        Div content = new Div(tasksDiv);
         content.setSizeFull();
 
         tabs.addSelectedChangeListener(event -> {
             content.removeAll();
             if (event.getSelectedTab() == tasksTab) {
-                content.add(tasksContent);
+                content.add(tasksDiv);
             } else if (event.getSelectedTab() == usersTab) {
                 content.add(userDiv);
             }
