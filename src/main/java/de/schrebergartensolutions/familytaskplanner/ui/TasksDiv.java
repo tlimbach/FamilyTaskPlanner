@@ -5,7 +5,6 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.*;
@@ -24,18 +23,15 @@ import de.schrebergartensolutions.familytaskplanner.entities.TaskPrio;
 import de.schrebergartensolutions.familytaskplanner.entities.TaskStatus;
 import de.schrebergartensolutions.familytaskplanner.service.BenutzerService;
 import de.schrebergartensolutions.familytaskplanner.service.TaskService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Component
 @UIScope
@@ -44,7 +40,9 @@ public class TasksDiv extends Div {
 
     private final BenutzerService benutzerService;
     private final TaskService taskService;
-    private Map<Benutzer, DataProvider> providerMap = new HashMap<>();
+    private final Map<Long, CallbackDataProvider<Task, Void>> providerMap = new HashMap<>();
+    private Task selectedTask;
+    private Long selectedBenutzerID;
 
     public TasksDiv(BenutzerService benutzerService, TaskService taskService) {
         this.benutzerService = benutzerService;
@@ -96,6 +94,25 @@ public class TasksDiv extends Div {
         add(root);
 
         btnNew.addClickListener(c -> openNewTaskDialog(null));
+        btnDelete.addClickListener(c->deleteSelectedTask());
+    }
+
+    private void deleteSelectedTask() {
+        if (selectedTask == null || selectedBenutzerID == null){
+            Notification.show("Nichts zum Löschen ausgewählt...");
+            return;
+        }
+
+        taskService.delete(selectedTask.getId());
+
+        CallbackDataProvider<Task, Void> prov = providerMap.get(selectedBenutzerID);
+        if (prov != null) {
+            prov.refreshAll();
+        }
+
+        // Auswahl zurücksetzen
+        selectedTask = null;
+        selectedBenutzerID = null;
     }
 
     private void openNewTaskDialog(Task existingTask) {
@@ -132,7 +149,13 @@ public class TasksDiv extends Div {
                 return;
             }
 
-            providerMap.get(task.getKamel()).refreshAll();
+            Long assigneeId = cbxBearbeiter.getValue() != null ? cbxBearbeiter.getValue().getId() : null;
+            if (assigneeId != null) {
+                CallbackDataProvider<Task, Void> prov = providerMap.get(assigneeId);
+                if (prov != null) {
+                    prov.refreshAll();
+                }
+            }
             dlg.close();
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
@@ -252,6 +275,7 @@ public class TasksDiv extends Div {
             controls.setWidthFull();
 
             cell.add(title, desc, controls);
+            cell.addClickListener(c -> { selectedTask = task; selectedBenutzerID = benutzer.getId(); });
             return cell;
         })).setHeader(header).setAutoWidth(true).setFlexGrow(1);
 
@@ -266,7 +290,7 @@ public class TasksDiv extends Div {
             return taskService.pageByAssignee(benutzer.getId(), PageRequest.of(page, size, sort)).stream();
         }, q -> (int) taskService.countByAssignee(benutzer.getId()));
 
-        providerMap.put(benutzer, provider);
+        providerMap.put(benutzer.getId(), provider);
 
         grid.setItems(provider);
         grid.setHeight("70vh");
