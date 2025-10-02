@@ -3,3 +3,7 @@
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
 }
+
+__vaadin-grid::part(header-cell) {
+    background-color:red;
+}

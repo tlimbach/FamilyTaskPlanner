@@ -7,6 +7,7 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -194,12 +195,14 @@ public class TasksDiv extends Div {
 
     private Grid<Task> buildUserLane(Benutzer benutzer) {
         Grid<Task> grid = new Grid<>(Task.class, false);
+        grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
         grid.setAllRowsVisible(true);             // Lanes wirken „kartenartig“
 //        grid.setWidth("22rem");                   // schmale Spalte
 //        grid.getStyle().set("background", "transparent");
 
         Span header = new Span(benutzer.getName());
-        header.getStyle().set("font-weight", "bold").set("font-size", "1.1rem").set("color", "#1976d2");
+        header.getStyle().set("font-weight", "bold").set("font-size", "1.1rem").set("color", "#1976d2").set("background-color", benutzer.getFarbe()).set("display","block");
+        header.getStyle().set("padding", "10px").set("margin", "0px").set("color", "black");
 
         grid.addColumn(new ComponentRenderer<>(task -> {
             VerticalLayout cell = new VerticalLayout();
