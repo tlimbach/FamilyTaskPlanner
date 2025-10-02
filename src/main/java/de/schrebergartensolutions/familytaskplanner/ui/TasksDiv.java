@@ -208,7 +208,7 @@ public class TasksDiv extends Div {
                 if (ev.isFromClient()) {
                     task.setStatus(ev.getValue());
                     taskService.save(task);
-                    grid.getDataProvider().refreshItem(task);
+                    grid.getDataProvider().refreshAll();
                 }
             });
             return cb;
@@ -221,8 +221,8 @@ public class TasksDiv extends Div {
         CallbackDataProvider<Task, Void> provider = DataProvider.fromCallbacks(q -> {
             int page = q.getOffset() / q.getLimit();
             int size = q.getLimit();
-            // Prio-Sortierung: HOCH > MITTEL > NIEDRIG, danach Titel
-            var sort = Sort.by(Sort.Order.desc("prio"), Sort.Order.asc("titel"));
+            // Prio-Sortierung: HOCH > MITTEL > NIEDRIG, danach Status, danach Titel
+            var sort = Sort.by(Sort.Order.desc("prio"), Sort.Order.desc("status"), Sort.Order.asc("titel"));
             return taskService.pageByAssignee(benutzer.getId(), PageRequest.of(page, size, sort)).stream();
         }, q -> (int) taskService.countByAssignee(benutzer.getId()));
 
