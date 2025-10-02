@@ -13,12 +13,16 @@ import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import de.schrebergartensolutions.familytaskplanner.SessionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @PageTitle("Familientaskplaner")
 @Route("planner")
 public class MainView extends VerticalLayout {
 
-    public MainView(UserDiv userDiv) {
+    @Autowired
+    private UserDiv userDiv;
+
+    public MainView() {
         setSizeFull();
         setPadding(false);
         setSpacing(false);
@@ -32,7 +36,7 @@ public class MainView extends VerticalLayout {
         Span userDisplay = new Span("Benutzer: " + username);
 
         Button btnLogout = new Button("Abmelden");
-        btnLogout.addClickListener(c->{
+        btnLogout.addClickListener(c -> {
             SessionUtils.logout();
             UI.getCurrent().navigate("login");
         });
