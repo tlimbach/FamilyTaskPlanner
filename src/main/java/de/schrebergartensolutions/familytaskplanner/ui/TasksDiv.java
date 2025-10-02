@@ -2,6 +2,7 @@ package de.schrebergartensolutions.familytaskplanner.ui;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
@@ -37,6 +38,7 @@ import java.util.Objects;
 
 @Component
 @UIScope
+@CssImport("./styles/task-styles.css")
 public class TasksDiv extends Div {
 
     private final BenutzerService benutzerService;
@@ -54,7 +56,7 @@ public class TasksDiv extends Div {
 
         // ---------- LINKS: 80% (Lanes je Benutzer) ----------
         HorizontalLayout lanes = new HorizontalLayout();
-        lanes.setPadding(false);
+        lanes.setPadding(true);
         lanes.setSpacing(true);
         lanes.setWidthFull();
         lanes.getStyle().set("overflow-x", "auto");        // horizontal scrollbar
@@ -62,7 +64,7 @@ public class TasksDiv extends Div {
 
         // Für jeden Benutzer eine Lane (= Grid<Task>) bauen
         benutzerService.findAll(Sort.by("name").ascending()).forEach(ben -> {
-            VerticalLayout lane = buildUserLane(ben);
+            Grid lane = buildUserLane(ben);
             lanes.add(lane);
         });
 
@@ -92,10 +94,10 @@ public class TasksDiv extends Div {
         root.getStyle().set("display", "flex");
         add(root);
 
-        btnNew.addClickListener(c -> openNewTaskDialog());
+        btnNew.addClickListener(c -> openNewTaskDialog(null));
     }
 
-    private void openNewTaskDialog() {
+    private void openNewTaskDialog(Task existingTask) {
 
         TextField tfTitel = new TextField();
         ComboBox<TaskPrio> cbxPrio = new ComboBox<>();
@@ -112,6 +114,9 @@ public class TasksDiv extends Div {
         Button ok = new Button("OK", e -> {
 
             Task task = new Task();
+
+            if (existingTask != null) task.setId(existingTask.getId());
+
             task.setKamelTreiber(cbxBearbeiter.getValue());
             task.setKamel(cbxBearbeiter.getValue());
             task.setStatus(cbxStatus.getValue());
@@ -119,12 +124,14 @@ public class TasksDiv extends Div {
             task.setTimestamp(Timestamp.valueOf(LocalDateTime.now()));
             task.setTitel(tfTitel.getValue());
             task.setBeschreibung(tfBeschreibung.getValue());
-
-            taskService.save(task);
+            try {
+                taskService.save(task);
+            } catch (Exception ex) {
+                Notification.show("Fehler beim Speichern. Stelle sicher, das der Titel nicht schon verwendet wird.");
+                return;
+            }
 
             providerMap.get(task.getKamel()).refreshAll();
-
-
             dlg.close();
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
@@ -132,7 +139,6 @@ public class TasksDiv extends Div {
         FormLayout formLayout = new FormLayout();
         formLayout.setWidthFull();
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1)); // 2 Spalten
-
 
         tfTitel.setPlaceholder("Neuer Task");
 
@@ -153,6 +159,16 @@ public class TasksDiv extends Div {
         cbxBearbeiter.setItems(benutzers);
         cbxBearbeiter.setItemLabelGenerator(b -> b.getName());
 
+        if (existingTask != null) {
+            cbxPrio.setValue(existingTask.getPrio());
+            cbxStatus.setValue(existingTask.getStatus());
+            tfTitel.setValue(existingTask.getTitel());
+            tfBeschreibung.setValue(existingTask.getBeschreibung());
+            Benutzer kamel = benutzers.stream().filter(k -> k.getId().equals(existingTask.getKamel().getId())).findFirst().get();
+            cbxBearbeiter.setValue(kamel);
+            cbxBearbeiter.setReadOnly(true);
+        }
+
         // Buttons unten rechts
         HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
         buttons.setWidthFull();
@@ -163,7 +179,7 @@ public class TasksDiv extends Div {
         content.setSpacing(true);
         content.setWidth("480px");
 
-        if (2 > 1) {
+        if (existingTask == null) {
             dlg.setHeaderTitle("Task anlegen");
         } else {
             dlg.setHeaderTitle("Task bearbeiten");
@@ -176,20 +192,20 @@ public class TasksDiv extends Div {
 
     }
 
-    private VerticalLayout buildUserLane(Benutzer benutzer) {
-        // Überschrift = Benutzername
-        H4 header = new H4(benutzer.getName());
-        header.getStyle().set("margin", "0 var(--lumo-space-xs) var(--lumo-space-s) var(--lumo-space-xs)");
-
+    private Grid<Task> buildUserLane(Benutzer benutzer) {
         Grid<Task> grid = new Grid<>(Task.class, false);
         grid.setAllRowsVisible(true);             // Lanes wirken „kartenartig“
 //        grid.setWidth("22rem");                   // schmale Spalte
-        grid.getStyle().set("background", "transparent");
+//        grid.getStyle().set("background", "transparent");
+
+        Span header = new Span(benutzer.getName());
+        header.getStyle().set("font-weight", "bold").set("font-size", "1.1rem").set("color", "#1976d2");
 
         grid.addColumn(new ComponentRenderer<>(task -> {
             VerticalLayout cell = new VerticalLayout();
-            cell.setPadding(false);
-            cell.setSpacing(false);
+            cell.addClassName("task-hover");
+            cell.setPadding(true);
+            cell.setSpacing(true);
             cell.getStyle().set("white-space", "normal");
 
             // Titel fett
@@ -204,7 +220,7 @@ public class TasksDiv extends Div {
             ComboBox<TaskStatus> cbStatus = new ComboBox<>();
             cbStatus.setItems(TaskStatus.values());
             cbStatus.setValue(task.getStatus());
-            cbStatus.setWidth("45%");
+            cbStatus.setWidth("12rem");
             cbStatus.addValueChangeListener(ev -> {
                 if (ev.isFromClient()) {
                     task.setStatus(ev.getValue());
@@ -217,7 +233,7 @@ public class TasksDiv extends Div {
             ComboBox<TaskPrio> cbPrio = new ComboBox<>();
             cbPrio.setItems(TaskPrio.values());
             cbPrio.setValue(task.getPrio());
-            cbPrio.setWidth("45%");
+            cbPrio.setWidth("8rem");
             cbPrio.addValueChangeListener(ev -> {
                 if (ev.isFromClient()) {
                     task.setPrio(ev.getValue());
@@ -234,7 +250,9 @@ public class TasksDiv extends Div {
 
             cell.add(title, desc, controls);
             return cell;
-        })).setHeader(benutzer.getName()).setAutoWidth(true).setFlexGrow(1);
+        })).setHeader(header).setAutoWidth(true).setFlexGrow(1);
+
+        grid.addItemDoubleClickListener(l -> openNewTaskDialog(l.getItem()));
 
         // Lazy DataProvider: nur Tasks dieses Benutzers, sortiert nach Prio (hoch→niedrig) und dann Titel
         CallbackDataProvider<Task, Void> provider = DataProvider.fromCallbacks(q -> {
@@ -250,11 +268,11 @@ public class TasksDiv extends Div {
         grid.setItems(provider);
         grid.setHeight("70vh");
 
-        VerticalLayout lane = new VerticalLayout(header, grid);
-        lane.setPadding(true);
-        lane.setSpacing(false);
-        lane.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)").set("border-radius", "var(--lumo-border-radius-m)").set("background", "var(--lumo-base-color)");
-        return lane;
+//        VerticalLayout lane = new VerticalLayout(header, grid);
+//        lane.setPadding(true);
+//        lane.setSpacing(false);
+//        lane.getStyle().set("border", "1px solid var(--lumo-contrast-10pct)").set("border-radius", "var(--lumo-border-radius-m)").set("background", "var(--lumo-base-color)");
+        return grid;
     }
 
 

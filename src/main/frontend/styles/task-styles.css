@@ -1,0 +1,5 @@
+.task-hover:hover {
+    background-color: #f5f7fa;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
