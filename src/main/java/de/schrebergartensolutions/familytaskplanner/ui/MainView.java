@@ -18,7 +18,7 @@ import de.schrebergartensolutions.familytaskplanner.SessionUtils;
 @Route("planner")
 public class MainView extends VerticalLayout {
 
-    public MainView() {
+    public MainView(UserDiv userDiv) {
         setSizeFull();
         setPadding(false);
         setSpacing(false);
@@ -63,8 +63,6 @@ public class MainView extends VerticalLayout {
         Div tasksContent = new Div();
         tasksContent.setText("→ Hier kommt später die Task-Übersicht hin");
         tasksContent.setSizeFull();
-
-        UserDiv userDiv = new UserDiv();
 
         Div content = new Div(tasksContent);
         content.setSizeFull();

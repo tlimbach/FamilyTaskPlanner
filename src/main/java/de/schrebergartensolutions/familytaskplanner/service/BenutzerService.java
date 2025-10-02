@@ -5,14 +5,19 @@ import de.schrebergartensolutions.familytaskplanner.repositories.BenutzerReposit
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
-@RequiredArgsConstructor
 public class BenutzerService {
     private final BenutzerRepository repo;
 
+    BenutzerService(BenutzerRepository repo) {
+        this.repo = repo;
+    }
     public Page<Benutzer> page(Pageable pageable) {
         return repo.findAll(pageable);
     }
@@ -35,4 +40,9 @@ public class BenutzerService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+
+    public List<Benutzer> findAll() { return repo.findAll(Sort.by("name").ascending()); }
+    public Benutzer save(Benutzer b) { return repo.save(b); }
+
+    public boolean existsByName(String name) { return repo.existsByName(name); }
 }

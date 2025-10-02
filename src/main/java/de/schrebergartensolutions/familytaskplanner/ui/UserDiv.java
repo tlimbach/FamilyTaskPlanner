@@ -14,11 +14,19 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
+import de.schrebergartensolutions.familytaskplanner.service.BenutzerService;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.vaadin.flow.spring.annotation.UIScope;
+import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@UIScope
+@Component
 public class UserDiv extends Div {
 
     private final Grid<Benutzer> grid = new Grid<>(Benutzer.class, false);
@@ -27,10 +35,14 @@ public class UserDiv extends Div {
 
     private final Button btnEdit = new Button("Bearbeiten");
     private final Button btnDelete = new Button("Löschen");
+    @Autowired
+    private BenutzerService benutzerService;
+
 
     public UserDiv() {
+
         setSizeFull();
-        users.add(new Benutzer("papa", "#1976d2"));
+//        users.add(new Benutzer("papa", "#1976d2"));
 
         grid.addColumn(Benutzer::getName).setHeader("Name").setAutoWidth(true).setFlexGrow(1);
         grid.addColumn(new ComponentRenderer<>(user -> {
@@ -121,14 +133,13 @@ public class UserDiv extends Div {
                 color = "#" + color;
             }
             if (existing == null) {
-                // neu anlegen
-                users.add(new Benutzer(name, color));
-                dataProvider.refreshAll();
+                benutzerService.save(new Benutzer(name, color));
             } else {
                 existing.setName(name);
                 existing.setFarbe(color);
-                dataProvider.refreshItem(existing);
+                benutzerService.save(existing);
             }
+            reloadFromDb();
             dlg.close();
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
@@ -172,9 +183,21 @@ public class UserDiv extends Div {
             Notification.show("Benutzer 'papa' kann nicht gelöscht werden.");
             return;
         }
-        users.remove(benutzer);
+        if (benutzer.getId() != null) {
+            benutzerService.delete(benutzer.getId());
+        }
+        reloadFromDb();
+    }
+
+    private void reloadFromDb() {
+        users.clear();
+        users.addAll(benutzerService.findAll());
         dataProvider.refreshAll();
     }
 
+    @PostConstruct
+    private void onInit() {
+        reloadFromDb();
+    }
 
 }
