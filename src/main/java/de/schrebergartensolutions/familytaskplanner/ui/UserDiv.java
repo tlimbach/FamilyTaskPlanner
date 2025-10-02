@@ -11,6 +11,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.provider.CallbackDataProvider;
+import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
@@ -18,6 +20,8 @@ import de.schrebergartensolutions.familytaskplanner.service.BenutzerService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.vaadin.flow.spring.annotation.UIScope;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 
@@ -29,15 +33,28 @@ import java.util.Objects;
 @Component
 public class UserDiv extends Div {
 
-    private final Grid<Benutzer> grid = new Grid<>(Benutzer.class, false);
-    private final List<Benutzer> users = new ArrayList<>();
-    private final ListDataProvider<Benutzer> dataProvider = new ListDataProvider<>(users);
-
-    private final Button btnEdit = new Button("Bearbeiten");
-    private final Button btnDelete = new Button("Löschen");
     @Autowired
     private BenutzerService benutzerService;
 
+    private final Grid<Benutzer> grid = new Grid<>(Benutzer.class, false);
+
+    private final CallbackDataProvider<Benutzer, Void> dataProvider =
+            DataProvider.fromCallbacks(
+                    // Fetch
+                    q -> {
+                        int page = q.getOffset() / q.getLimit();
+                        int size = q.getLimit();
+                        return benutzerService
+                                .page(PageRequest.of(page, size, Sort.by("name").ascending()))
+                                .getContent()
+                                .stream();
+                    },
+                    // Count
+                    q -> (int) benutzerService.count()
+            );
+
+    private final Button btnEdit = new Button("Bearbeiten");
+    private final Button btnDelete = new Button("Löschen");
 
     public UserDiv() {
 
@@ -139,7 +156,8 @@ public class UserDiv extends Div {
                 existing.setFarbe(color);
                 benutzerService.save(existing);
             }
-            reloadFromDb();
+            dataProvider.refreshAll();
+
             dlg.close();
         });
         Button cancel = new Button("Abbrechen", e -> dlg.close());
@@ -185,19 +203,13 @@ public class UserDiv extends Div {
         }
         if (benutzer.getId() != null) {
             benutzerService.delete(benutzer.getId());
+            dataProvider.refreshAll();
         }
-        reloadFromDb();
+
     }
 
-    private void reloadFromDb() {
-        users.clear();
-        users.addAll(benutzerService.findAll());
-        dataProvider.refreshAll();
-    }
 
-    @PostConstruct
-    private void onInit() {
-        reloadFromDb();
-    }
+
+
 
 }

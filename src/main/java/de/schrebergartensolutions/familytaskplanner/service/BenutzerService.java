@@ -18,8 +18,14 @@ public class BenutzerService {
     BenutzerService(BenutzerRepository repo) {
         this.repo = repo;
     }
+
     public Page<Benutzer> page(Pageable pageable) {
         return repo.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public long count() {
+        return repo.count();
     }
 
     @Transactional
@@ -33,7 +39,7 @@ public class BenutzerService {
         var b = repo.findById(id).orElseThrow();
         b.setName(name);
         b.setFarbe(farbe);
-        return b; // Dirty checking speichert automatisch
+        return b; // Dirty checking
     }
 
     @Transactional
@@ -41,8 +47,6 @@ public class BenutzerService {
         repo.deleteById(id);
     }
 
-    public List<Benutzer> findAll() { return repo.findAll(Sort.by("name").ascending()); }
     public Benutzer save(Benutzer b) { return repo.save(b); }
-
     public boolean existsByName(String name) { return repo.existsByName(name); }
 }
