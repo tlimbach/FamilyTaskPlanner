@@ -42,6 +42,7 @@ public class TasksDiv extends Div {
     private final BenutzerService benutzerService;
     private final TaskService taskService;
     private Map<Benutzer, DataProvider> providerMap = new HashMap<>();
+
     public TasksDiv(BenutzerService benutzerService, TaskService taskService) {
         this.benutzerService = benutzerService;
         this.taskService = taskService;
@@ -133,7 +134,6 @@ public class TasksDiv extends Div {
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1)); // 2 Spalten
 
 
-
         tfTitel.setPlaceholder("Neuer Task");
 
 
@@ -151,7 +151,7 @@ public class TasksDiv extends Div {
         cbxStatus.setItems(TaskStatus.values());
         List<Benutzer> benutzers = benutzerService.findAll(Sort.by("name").ascending());
         cbxBearbeiter.setItems(benutzers);
-        cbxBearbeiter.setItemLabelGenerator(b->b.getName());
+        cbxBearbeiter.setItemLabelGenerator(b -> b.getName());
 
         // Buttons unten rechts
         HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
@@ -163,7 +163,7 @@ public class TasksDiv extends Div {
         content.setSpacing(true);
         content.setWidth("480px");
 
-        if (2>1) {
+        if (2 > 1) {
             dlg.setHeaderTitle("Task anlegen");
         } else {
             dlg.setHeaderTitle("Task bearbeiten");
@@ -183,39 +183,58 @@ public class TasksDiv extends Div {
 
         Grid<Task> grid = new Grid<>(Task.class, false);
         grid.setAllRowsVisible(true);             // Lanes wirken „kartenartig“
-        grid.setWidth("22rem");                   // schmale Spalte
+//        grid.setWidth("22rem");                   // schmale Spalte
         grid.getStyle().set("background", "transparent");
 
-        // Spalte: Titel + Beschreibung (in einer Zelle)
         grid.addColumn(new ComponentRenderer<>(task -> {
-            Div cell = new Div();
+            VerticalLayout cell = new VerticalLayout();
+            cell.setPadding(false);
+            cell.setSpacing(false);
             cell.getStyle().set("white-space", "normal");
+
+            // Titel fett
             Span title = new Span(task.getTitel() == null ? "(ohne Titel)" : task.getTitel());
             title.getStyle().set("font-weight", "600");
+
+            // Beschreibung
             Paragraph desc = new Paragraph(task.getBeschreibung() == null ? "" : task.getBeschreibung());
             desc.getStyle().set("margin", "0");
-            cell.add(title, desc);
-            return cell;
-        })).setHeader("Task").setAutoWidth(true).setFlexGrow(1);
 
-        // Spalte: Status (ComboBox, speichert sofort)
-        grid.addColumn(new ComponentRenderer<>(task -> {
-            ComboBox<TaskStatus> cb = new ComboBox<>();
-            cb.setItems(TaskStatus.values());
-            cb.setValue(task.getStatus());
-            cb.setWidthFull();
-            cb.addValueChangeListener(ev -> {
+            // Untere Zeile: Status + Prio
+            ComboBox<TaskStatus> cbStatus = new ComboBox<>();
+            cbStatus.setItems(TaskStatus.values());
+            cbStatus.setValue(task.getStatus());
+            cbStatus.setWidth("45%");
+            cbStatus.addValueChangeListener(ev -> {
                 if (ev.isFromClient()) {
                     task.setStatus(ev.getValue());
                     taskService.save(task);
+//                    grid.getDataProvider().refreshItem(task); // gezieltes Refresh nur für diese Zeile
                     grid.getDataProvider().refreshAll();
                 }
             });
-            return cb;
-        })).setHeader("Status").setAutoWidth(true).setFlexGrow(0);
 
-        // Optional: Priorität lesen (nur Anzeige)
-        grid.addColumn(task -> task.getPrio() == null ? "" : task.getPrio().name()).setHeader("Prio").setAutoWidth(true).setFlexGrow(0);
+            ComboBox<TaskPrio> cbPrio = new ComboBox<>();
+            cbPrio.setItems(TaskPrio.values());
+            cbPrio.setValue(task.getPrio());
+            cbPrio.setWidth("45%");
+            cbPrio.addValueChangeListener(ev -> {
+                if (ev.isFromClient()) {
+                    task.setPrio(ev.getValue());
+                    taskService.save(task);
+//                    grid.getDataProvider().refreshItem(task);
+                    grid.getDataProvider().refreshAll();
+                }
+            });
+
+            HorizontalLayout controls = new HorizontalLayout(cbPrio, cbStatus);
+            controls.setPadding(false);
+            controls.setSpacing(true);
+            controls.setWidthFull();
+
+            cell.add(title, desc, controls);
+            return cell;
+        })).setHeader(benutzer.getName()).setAutoWidth(true).setFlexGrow(1);
 
         // Lazy DataProvider: nur Tasks dieses Benutzers, sortiert nach Prio (hoch→niedrig) und dann Titel
         CallbackDataProvider<Task, Void> provider = DataProvider.fromCallbacks(q -> {
