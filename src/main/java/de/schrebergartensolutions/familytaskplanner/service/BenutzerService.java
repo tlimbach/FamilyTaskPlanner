@@ -49,4 +49,10 @@ public class BenutzerService {
 
     public Benutzer save(Benutzer b) { return repo.save(b); }
     public boolean existsByName(String name) { return repo.existsByName(name); }
+
+    public List<Benutzer> findAll(Sort name) {
+        return repo.findAll(name);
+    }
+
+
 }
