@@ -9,6 +9,4 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - family_pg_data:/var/lib/postgresql/data
-volumes:
-  family_pg_data:
+      - ../../pgdata:/var/lib/postgresql/data
