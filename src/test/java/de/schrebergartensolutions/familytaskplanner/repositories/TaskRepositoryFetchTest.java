@@ -107,4 +107,62 @@ class TaskRepositoryFetchTest {
 
         assertThat(detachedTask.getKamel().getName()).isEqualTo("Maya");
     }
+
+
+    // --- DTO nur für Tests ---
+    public static record TaskRow(
+            Long taskId,
+            String titel,
+            String beschreibung,
+            Long kamelId,
+            String kamelName,
+            String kamelFarbe,
+            TaskStatus status,
+            TaskPrio prio,
+            java.sql.Timestamp timestamp
+    ) {}
+
+    @Test
+    void dto_projection_via_jpql_constructor_ok() {
+        // JPQL-Constructor-Expression in unser Test-DTO (Nested-Class beachten: $ im FQN)
+        String q = """
+            select new de.schrebergartensolutions.familytaskplanner.repositories.TaskRepositoryFetchTest$TaskRow(
+                t.id, t.titel, t.beschreibung,
+                k.id, k.name, k.farbe,
+                t.status, t.prio, t.timestamp
+            )
+            from Task t
+            join t.kamel k
+            where k.id = :id
+            order by t.prio desc, t.titel asc
+            """;
+
+        var rows = em.createQuery(q, TaskRow.class)
+                .setParameter("id", mayaId)
+                .setMaxResults(10)
+                .getResultList();
+
+        rows.forEach(r -> System.out.println(
+                "TaskRow{id=%d, titel='%s', beschr='%s', kamel=%s (%s), status=%s, prio=%s, ts=%s}"
+                        .formatted(
+                                r.taskId(),
+                                r.titel(),
+                                r.beschreibung(),
+                                r.kamelName(),
+                                r.kamelFarbe(),
+                                r.status(),
+                                r.prio(),
+                                r.timestamp()
+                        )
+        ));
+
+
+        // Verifizieren: keine Lazy-Proxies, nur nackte Werte
+        assertThat(rows).isNotEmpty();
+        TaskRow first = rows.get(0);
+        assertThat(first.kamelName()).isEqualTo("Maya");
+        assertThat(first.titel()).isNotBlank();
+        assertThat(first.kamelFarbe()).isEqualTo("#1976d2");
+    }
+
 }
