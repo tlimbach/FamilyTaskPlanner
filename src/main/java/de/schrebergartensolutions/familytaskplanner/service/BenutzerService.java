@@ -57,4 +57,12 @@ public class BenutzerService {
     public void saveAll(List<Benutzer> users) {
         repo.saveAll(users); // Hibernate batcht das – mit obiger Konfig
     }
+
+    @Transactional(readOnly = true)
+    public Page<Benutzer> page(String q, Pageable pageable) {
+        if (q == null || q.isBlank()) {
+            return repo.findAll(pageable);
+        }
+        return repo.findByNameContainingIgnoreCase(q, pageable);
+    }
 }
