@@ -1,136 +1,134 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { Benutzer } from '../models/benutzer';
 import { BenutzerService } from '../services/benutzer.service';
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ScrollingModule],
   template: `
     <h1>Benutzer</h1>
 
-    <div style="margin-bottom: .75rem;">
+    <div style="margin-bottom:.75rem; display:flex; gap:.5rem; align-items:center;">
       <input [(ngModel)]="q" placeholder="Suche nach Name..." />
-      <button (click)="search()">Suchen</button>
+      <button (click)="onSearch()">Suchen</button>
+      <span *ngIf="loading()" style="opacity:.7;">lädt …</span>
     </div>
 
-    <div *ngIf="total() === 0; else listTpl">Keine Daten.</div>
+    <div *ngIf="total() === 0 && !loading(); else listTpl">Keine Daten.</div>
 
     <ng-template #listTpl>
-      <table style="width:100%; border-collapse:collapse;">
-        <thead>
-          <tr>
-            <th style="text-align:left; border-bottom:1px solid #ddd; padding:.4rem;">Name</th>
-            <th style="text-align:left; border-bottom:1px solid #ddd; padding:.4rem;">Farbe</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of users()">
-            <td style="padding:.4rem;">{{ u.name }}</td>
-            <td style="padding:.4rem;">
-              <span [style.background]="u.farbe"
-                    style="display:inline-block; width:1.2rem; height:1.2rem; border:1px solid #ccc; vertical-align:middle; margin-right:.5rem;"></span>
-              <code>{{ u.farbe }}</code>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Virtual Scroll Viewport: lädt nach, sobald wir ans Ende kommen -->
+      <cdk-virtual-scroll-viewport
+        #viewport
+        [itemSize]="36"
+        class="viewport"
+        (scrolledIndexChange)="onScrolled($event)">
 
-      <div style="margin-top:.75rem; display:flex; gap:.5rem; align-items:center;">
-        <button (click)="prev()" [disabled]="page() === 0">Zurück</button>
-        <span>Seite {{ page() + 1 }} / {{ totalPages() }}</span>
-        <button (click)="next()" [disabled]="page() + 1 >= totalPages()">Weiter</button>
-        <span style="margin-left:.5rem;">(gesamt: {{ total() }})</span>
-      </div>
+        <div class="row header">
+          <div class="cell name"><b>Name</b></div>
+          <div class="cell color"><b>Farbe</b></div>
+        </div>
+
+        <div *cdkVirtualFor="let u of users(); trackBy: trackById" class="row">
+          <div class="cell name">{{ u.name }}</div>
+          <div class="cell color">
+            <span class="chip" [style.background]="u.farbe"></span>
+            <code>{{ u.farbe }}</code>
+          </div>
+        </div>
+
+        <div class="row footer" *ngIf="loading()">Weitere Daten werden geladen …</div>
+      </cdk-virtual-scroll-viewport>
     </ng-template>
   `,
-  styles: [``]
+  styles: [`
+    .viewport { height: 70vh; width: 100%; border: 1px solid #ddd; border-radius: 6px; }
+    .row { display: grid; grid-template-columns: 1fr 220px; align-items: center; height: 36px; box-sizing: border-box; }
+    .header { position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid #e5e5e5; z-index: 1; }
+    .cell { padding: 0 .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .name { }
+    .color { display: flex; gap: .5rem; align-items: center; }
+    .chip { display:inline-block; width: 18px; height: 18px; border:1px solid #ccc; border-radius:4px; }
+    .footer { justify-content: center; font-style: italic; color: #666; }
+  `]
 })
 export class UsersComponent implements OnInit {
 
-  page   = signal(0);
-  size   = signal(20);
-  q: string = '';
-
-  users = signal<Benutzer[]>([]);
+  // Query & Paging-Status
+  q = '';
+  page = signal(0);
+  size = signal(100);       // größere Seiten -> weniger Netz-Overhead
   total = signal(0);
   totalPages = signal(1);
+
+  users = signal<Benutzer[]>([]);
+  loading = signal(false);
+  finished = computed(() => this.page() + 1 >= this.totalPages());
 
   constructor(private service: BenutzerService) {}
 
   ngOnInit(): void {
-    this.load();
+    this.resetAndLoad();
   }
 
-  search(): void {
+  // === UI Events ===
+  onSearch(): void {
+    this.resetAndLoad();
+  }
+
+  onScrolled(idx: number): void {
+    // Wenn der sichtbare Index nahe am Ende ist, nächste Seite laden
+    const threshold = Math.max(5, Math.floor(this.size() * 0.2)); // z.B. letzte 20% oder mind. 5
+    if (!this.loading() && !this.finished() && idx + threshold >= this.users().length) {
+      this.loadNextPage();
+    }
+  }
+
+  trackById(index: number, u: Benutzer) { return u.id; }
+
+  // === Lade-Logik ===
+  private resetAndLoad(): void {
     this.page.set(0);
-    this.load();
+    this.total.set(0);
+    this.totalPages.set(1);
+    this.users.set([]);
+    this.loadNextPage(true);
   }
 
-  next(): void {
-    if (this.page() + 1 < this.totalPages()) {
-      this.page.set(this.page() + 1);
-      this.load();
-    }
+  private loadNextPage(reset = false): void {
+    this.loading.set(true);
+
+    const nextPage = reset ? 0 : this.page();
+    this.service.page(nextPage, this.size(), this.q).subscribe({
+      next: p => {
+        const content = p?.content ?? [];
+        const total = p?.totalElements ?? 0;
+        const totalPages = Math.max(1, p?.totalPages ?? 1);
+
+        // an bestehende Liste anhängen (oder ersetzen bei reset)
+        if (reset) {
+          this.users.set(content);
+        } else {
+          this.users.set([...this.users(), ...content]);
+        }
+
+        this.total.set(total);
+        this.totalPages.set(totalPages);
+
+        // nur erhöhen, wenn wirklich noch was kam
+        if (content.length > 0 && nextPage < totalPages) {
+          this.page.set(nextPage + 1);
+        }
+        this.loading.set(false);
+      },
+      error: err => {
+        console.error('[Users] load failed', err);
+        this.loading.set(false);
+      }
+    });
   }
-
-  prev(): void {
-    if (this.page() > 0) {
-      this.page.set(this.page() - 1);
-      this.load();
-    }
-  }
-
-private load(): void {
-  const pg = this.page();
-  const sz = this.size();
-  const term = this.q ?? '';
-  console.log('[Users] load() → calling service.page', { page: pg, size: sz, q: term });
-
-  this.service.page(pg, sz, term).subscribe({
-    next: (p: any) => {
-      console.log('[Users] service returned', p);
-
-      // 1) gar nichts?
-      if (!p) {
-        console.warn('[Users] WARNING: page payload is null/undefined');
-        this.users.set([]);
-        this.total.set(0);
-        this.totalPages.set(1);
-        return;
-      }
-
-      // 2) Es kommt ein Array statt Page<T> (z.B. wenn Service falsch typisiert ist)
-      if (Array.isArray(p)) {
-        console.warn('[Users] WARNING: service returned an ARRAY, expected a Page<T>. Mapping array to table.');
-        this.users.set(p);
-        this.total.set(p.length);
-        this.totalPages.set(1);
-        return;
-      }
-
-      // 3) Objekt ohne "content" → auch laut schreien
-      if (!('content' in p)) {
-        console.warn('[Users] WARNING: object has no "content" property. Keys =', Object.keys(p));
-        this.users.set([]);
-        this.total.set(0);
-        this.totalPages.set(1);
-        return;
-      }
-
-      // 4) Happy path
-      this.users.set(p.content ?? []);
-      this.total.set(p.totalElements ?? (p.content?.length ?? 0));
-      this.totalPages.set(Math.max(1, p.totalPages ?? 1));
-    },
-    error: err => {
-      console.error('[Users] load() failed', err);
-      this.users.set([]);
-      this.total.set(0);
-      this.totalPages.set(1);
-    }
-  });
-}
 }
