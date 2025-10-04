@@ -13,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.DataProvider;
-import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
 import de.schrebergartensolutions.familytaskplanner.service.BenutzerService;
@@ -23,11 +22,12 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import jakarta.annotation.PostConstruct;
+import org.springframework.util.StopWatch;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 
 @UIScope
 @Component
@@ -35,6 +35,8 @@ public class UserDiv extends Div {
 
     @Autowired
     private BenutzerService benutzerService;
+
+    int cachedCount;
 
     private final Grid<Benutzer> grid = new Grid<>(Benutzer.class, false);
 
@@ -50,7 +52,13 @@ public class UserDiv extends Div {
                                 .stream();
                     },
                     // Count
-                    q -> (int) benutzerService.count()
+                    q -> {
+                        if (cachedCount==0) {
+                            cachedCount = (int) benutzerService.count();
+
+                        }
+                        return cachedCount;
+                    }
             );
 
     private final Button btnEdit = new Button("Bearbeiten");
@@ -58,8 +66,11 @@ public class UserDiv extends Div {
 
     public UserDiv() {
 
+
+
         setSizeFull();
 //        users.add(new Benutzer("papa", "#1976d2"));
+        grid.setPageSize(100);   // größere Seiten verringern Nachlade-Latenz
 
         grid.addColumn(Benutzer::getName).setHeader("Name").setAutoWidth(true).setFlexGrow(1);
         grid.addColumn(new ComponentRenderer<>(user -> {
@@ -160,7 +171,11 @@ public class UserDiv extends Div {
 
             dlg.close();
         });
-        Button cancel = new Button("Abbrechen", e -> dlg.close());
+
+        Button btnCreateMaaaaany = new Button("viele anlegen");
+        btnCreateMaaaaany.addClickListener(c->createManyUser());
+
+        Button cancel = new Button("Abbbrechen", e -> dlg.close());
 
         FormLayout formLayout = new FormLayout();
         formLayout.setWidthFull();
@@ -174,7 +189,7 @@ public class UserDiv extends Div {
         formLayout.addFormItem(colorInput, lblColor);
 
         // Buttons unten rechts
-        HorizontalLayout buttons = new HorizontalLayout(ok, cancel);
+        HorizontalLayout buttons = new HorizontalLayout(ok, cancel, btnCreateMaaaaany);
         buttons.setWidthFull();
         buttons.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
@@ -193,6 +208,22 @@ public class UserDiv extends Div {
 
         dlg.add(content);
         dlg.open();
+    }
+
+    private void createManyUser() {
+        int MAX_USERS = 100_000;
+        Random random = new Random();
+        List<Benutzer> alleMeineEsel = new ArrayList<>();
+        for (int t=0; t<MAX_USERS; t++) {
+            String color = String.format("#%06x", random.nextInt(0xFFFFFF + 1));
+            Benutzer esel = new Benutzer();
+            esel.setName(""+t);
+            esel.setFarbe(color);
+            alleMeineEsel.add(esel);
+        }
+        long now = System.currentTimeMillis();
+        benutzerService.saveAll(alleMeineEsel);
+        System.out.println("-" + (System.currentTimeMillis()-now));
     }
 
     private void deleteUser(Benutzer benutzer) {

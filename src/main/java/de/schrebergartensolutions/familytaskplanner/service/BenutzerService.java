@@ -2,7 +2,6 @@ package de.schrebergartensolutions.familytaskplanner.service;
 
 import de.schrebergartensolutions.familytaskplanner.entities.Benutzer;
 import de.schrebergartensolutions.familytaskplanner.repositories.BenutzerRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -54,5 +53,8 @@ public class BenutzerService {
         return repo.findAll(name);
     }
 
-
+    @Transactional
+    public void saveAll(List<Benutzer> users) {
+        repo.saveAll(users); // Hibernate batcht das – mit obiger Konfig
+    }
 }

@@ -62,7 +62,7 @@ public class TasksDiv extends Div {
         lanes.getStyle().set("align-items", "start");
 
         // Für jeden Benutzer eine Lane (= Grid<Task>) bauen
-        benutzerService.findAll(Sort.by("name").ascending()).forEach(ben -> {
+        benutzerService.findAll(Sort.by("name").ascending()).stream().limit(2).forEach(ben -> {
             Grid lane = buildUserLane(ben);
             lanes.add(lane);
         });
