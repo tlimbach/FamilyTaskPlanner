@@ -22,7 +22,7 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
+
 
 import java.util.ArrayList;
 import java.util.List;

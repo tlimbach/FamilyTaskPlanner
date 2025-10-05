@@ -63,8 +63,7 @@ public class TasksDiv extends Div {
 
         // Für jeden Benutzer eine Lane (= Grid<Task>) bauen
         benutzerService.findAll(Sort.by("name").ascending()).stream().limit(2).forEach(ben -> {
-            Grid lane = buildUserLane(ben);
-            lanes.add(lane);
+            lanes.add(buildUserLane(ben));
         });
 
         // Wrapper, der links 80% belegt

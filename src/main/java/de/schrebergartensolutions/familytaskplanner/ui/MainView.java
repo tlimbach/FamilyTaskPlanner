@@ -20,16 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class MainView extends VerticalLayout {
 
 
-    private final UserDiv userDiv;
-
-
-    private final TasksDiv tasksDiv;
-
+   
     @Autowired
     public MainView(UserDiv userDiv, TasksDiv tasksDiv) {
-        this.userDiv = userDiv;
-        this.tasksDiv = tasksDiv;
-
+       
         setSizeFull();
         setPadding(false);
         setSpacing(false);
