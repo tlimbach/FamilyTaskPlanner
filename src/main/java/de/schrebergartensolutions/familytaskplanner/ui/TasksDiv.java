@@ -58,7 +58,7 @@ public class TasksDiv extends Div {
         lanes.setPadding(true);
         lanes.setSpacing(true);
         lanes.setWidthFull();
-        lanes.getStyle().set("overflow-x", "auto");        // horizontal scrollbar
+        lanes.getStyle(). set("overflow-x", "auto");        // horizontal scrollbar
         lanes.getStyle().set("align-items", "start");
 
         // Für jeden Benutzer eine Lane (= Grid<Task>) bauen
