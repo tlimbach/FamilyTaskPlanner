@@ -1,6 +1,7 @@
 package de.schrebergartensolutions.familytaskplanner.repositories;
 
 import de.schrebergartensolutions.familytaskplanner.entities.Task;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -9,8 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
-
-//    Page<Task> findByKamel_Id(Long kamelId, Pageable pageable);
 
     long countByKamel_Id(Long kamelId);
 
@@ -26,5 +25,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
       where k.id = :id
       """,
             countQuery = "select count(t) from Task t where t.kamel.id = :id")
-    Page<Task> pageByAssigneeWithUser(@Param("id") Long id, Pageable p);
+    Page<Task> pageByAssigneeWithUser(@Param("id") Long id, Pageable p); 
 }

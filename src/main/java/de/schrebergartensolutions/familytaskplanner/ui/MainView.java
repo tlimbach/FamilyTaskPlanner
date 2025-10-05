@@ -18,8 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @PageTitle("Familientaskplaner")
 @Route("planner")
 public class MainView extends VerticalLayout {
-
-
    
     @Autowired
     public MainView(UserDiv userDiv, TasksDiv tasksDiv) {
