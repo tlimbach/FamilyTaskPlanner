@@ -22,7 +22,7 @@ public class BenutzerController {
             @RequestParam(required = false) String q
     ) {
         var pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        var p = service.page(pageable);
+        var p = service.page(q, pageable);
         return new PageResponse<>(
                 p.getContent(),
                 p.getTotalElements(),

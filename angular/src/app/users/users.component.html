@@ -1,0 +1,33 @@
+<h1>Benutzer</h1>
+
+<div style="margin-bottom:.75rem; display:flex; gap:.5rem; align-items:center;">
+  <input [(ngModel)]="q" placeholder="Suche nach Name..." />
+  <button (click)="onSearch()">Suchen</button>
+  <span *ngIf="loading()" style="opacity:.7;">lädt …</span>
+</div>
+
+<div *ngIf="total() === 0 && !loading(); else listTpl">Keine Daten.</div>
+
+<ng-template #listTpl>
+  <!-- Virtual Scroll Viewport: lädt nach, sobald wir ans Ende kommen -->
+  <cdk-virtual-scroll-viewport
+    #viewport
+    [itemSize]="36"
+    class="viewport"
+    (scrolledIndexChange)="onScrolled($event)">
+
+    <div class="row header">
+      <div class="cell name"><b>Name</b></div>
+      <div class="cell color"><b>Farbe</b></div>
+    </div>
+
+    <div *cdkVirtualFor="let u of users(); trackBy: trackById" class="row">
+      <div class="cell name">{{ u.name }}</div>
+      <div class="cell color">
+        <span class="chip" [style.background]="u.farbe"></span>
+      </div>
+    </div>
+
+    <div class="row footer" *ngIf="loading()">Weitere Daten werden geladen …</div>
+  </cdk-virtual-scroll-viewport>
+</ng-template>

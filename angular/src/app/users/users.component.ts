@@ -9,52 +9,8 @@ import { BenutzerService } from '../services/benutzer.service';
   selector: 'app-users',
   standalone: true,
   imports: [CommonModule, FormsModule, ScrollingModule],
-  template: `
-    <h1>Benutzer</h1>
-
-    <div style="margin-bottom:.75rem; display:flex; gap:.5rem; align-items:center;">
-      <input [(ngModel)]="q" placeholder="Suche nach Name..." />
-      <button (click)="onSearch()">Suchen</button>
-      <span *ngIf="loading()" style="opacity:.7;">lädt …</span>
-    </div>
-
-    <div *ngIf="total() === 0 && !loading(); else listTpl">Keine Daten.</div>
-
-    <ng-template #listTpl>
-      <!-- Virtual Scroll Viewport: lädt nach, sobald wir ans Ende kommen -->
-      <cdk-virtual-scroll-viewport
-        #viewport
-        [itemSize]="36"
-        class="viewport"
-        (scrolledIndexChange)="onScrolled($event)">
-
-        <div class="row header">
-          <div class="cell name"><b>Name</b></div>
-          <div class="cell color"><b>Farbe</b></div>
-        </div>
-
-        <div *cdkVirtualFor="let u of users(); trackBy: trackById" class="row">
-          <div class="cell name">{{ u.name }}</div>
-          <div class="cell color">
-            <span class="chip" [style.background]="u.farbe"></span>
-            <code>{{ u.farbe }}</code>
-          </div>
-        </div>
-
-        <div class="row footer" *ngIf="loading()">Weitere Daten werden geladen …</div>
-      </cdk-virtual-scroll-viewport>
-    </ng-template>
-  `,
-  styles: [`
-    .viewport { height: 70vh; width: 100%; border: 1px solid #ddd; border-radius: 6px; }
-    .row { display: grid; grid-template-columns: 1fr 220px; align-items: center; height: 36px; box-sizing: border-box; }
-    .header { position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid #e5e5e5; z-index: 1; }
-    .cell { padding: 0 .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .name { }
-    .color { display: flex; gap: .5rem; align-items: center; }
-    .chip { display:inline-block; width: 18px; height: 18px; border:1px solid #ccc; border-radius:4px; }
-    .footer { justify-content: center; font-style: italic; color: #666; }
-  `]
+  templateUrl: './users.component.html',
+  styleUrls: ['./users.component.css']
 })
 export class UsersComponent implements OnInit {
 
@@ -110,11 +66,9 @@ export class UsersComponent implements OnInit {
         const totalPages = Math.max(1, p?.totalPages ?? 1);
 
         // an bestehende Liste anhängen (oder ersetzen bei reset)
-        if (reset) {
-          this.users.set(content);
-        } else {
-          this.users.set([...this.users(), ...content]);
-        }
+        const merged = reset ? [...content] : [...this.users(), ...content];
+        merged.sort((a, b) => a.name.localeCompare(b.name, 'de', { sensitivity: 'base', numeric: true }));
+        this.users.set(merged);
 
         this.total.set(total);
         this.totalPages.set(totalPages);

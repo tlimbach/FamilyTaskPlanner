@@ -1,0 +1,8 @@
+.viewport { height: 70vh; width: 100%; border: 1px solid #ddd; border-radius: 6px; }
+.row { display: grid; grid-template-columns: 1fr 260px; align-items: center; height: 36px; box-sizing: border-box; }
+.header { position: sticky; top: 0; background: #fafafa; border-bottom: 1px solid #e5e5e5; z-index: 1; }
+.cell { padding: 0 .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name { }
+.color { display: flex; gap: .5rem; align-items: center; }
+.chip { display:inline-block; width: 60px; height: 18px; border:1px solid #ccc; border-radius:4px; }
+.footer { justify-content: center; font-style: italic; color: #666; }
